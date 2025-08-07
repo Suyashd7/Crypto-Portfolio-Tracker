@@ -204,15 +204,15 @@ function App() {
     setError('');
     const sym = symbol.trim().toUpperCase();
     if (!sym || !amount || isNaN(amount) || Number(amount) <= 0) {
-      setError('Please enter a valid symbol and amount.');
+      setError('Please enter a valid token symbol and quantity you own.');
       return;
     }
     if (!SYMBOL_TO_ID[sym]) {
-      setError('Token symbol not supported.');
+      setError(`Token symbol "${sym}" not supported. Try BTC, ETH, ADA, SOL, etc.`);
       return;
     }
     if (portfolio.find((t) => t.symbol === sym)) {
-      setError('Token already in portfolio.');
+      setError(`${sym} is already in your portfolio. You can remove it first to update the quantity.`);
       return;
     }
     setPortfolio([...portfolio, { symbol: sym, amount: Number(amount) }]);
@@ -236,7 +236,7 @@ function App() {
       return;
     }
     const csvData = [
-      ['Token Symbol', 'Token Name', `Price (${currency})`, '24h Change (%)', 'Amount Held', `Value (${currency})`],
+      ['Token Symbol', 'Token Name', `Price (${currency})`, '24h Change (%)', 'Quantity Owned', `Value (${currency})`],
       ...portfolio.map(token => [
         token.symbol,
         SYMBOL_TO_ID[token.symbol] ? SYMBOL_TO_ID[token.symbol].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '',
@@ -395,23 +395,24 @@ function App() {
             {/* Manual Add */}
             <div className="input-card">
               <h3 className="input-title">Add Manually</h3>
-              <p className="input-description">Manually add cryptocurrencies to track in your portfolio</p>
+              <p className="input-description">Enter the token symbol and the quantity you own (not dollar value)</p>
               <form onSubmit={handleAddToken} className="manual-form">
                 <div className="form-row">
                   <input
                     type="text"
-                    placeholder="Symbol (e.g., BTC)"
+                    placeholder="Token Symbol (e.g., BTC, ETH)"
                     value={symbol}
                     onChange={e => setSymbol(e.target.value)}
                     className="form-input"
                   />
                   <input
                     type="number"
-                    placeholder="Amount"
+                    placeholder="Quantity (e.g., 0.5 BTC)"
                     value={amount}
                     onChange={e => setAmount(e.target.value)}
                     className="form-input"
                     step="any"
+                    min="0"
                   />
                   <button type="submit" className="add-button">
                     <svg className="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,7 +490,7 @@ function App() {
                       <th>Asset</th>
                       <th>Price</th>
                       <th>24h Change</th>
-                      <th>Holdings</th>
+                      <th>Quantity Owned</th>
                       <th>Value</th>
                       <th>Alert</th>
                       <th>Action</th>

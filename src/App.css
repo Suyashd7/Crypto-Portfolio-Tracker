@@ -510,6 +510,7 @@ body {
 .holdings-cell {
   font-weight: 500;
   color: #4b5563;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
 
 .value-cell {
