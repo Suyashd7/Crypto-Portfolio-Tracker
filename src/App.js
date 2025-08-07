@@ -555,6 +555,7 @@ function App() {
                                   <div className="alert-info">
                                     <span className="alert-price">{alert.price} {currency}</span>
                                     {alertTriggered && <span className="alert-badge">🔔 Triggered</span>}
+                                    }
                                   </div>
                                   <button 
                                     onClick={() => handleClearAlert(token.symbol)}
