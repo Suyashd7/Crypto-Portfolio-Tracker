@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import './App.css';
 
 // Alchemy API configuration
@@ -28,7 +28,6 @@ const SYMBOL_TO_ID = {
   XMR: 'monero',
   ATOM: 'cosmos',
   AAVE: 'aave',
-  // Add more as needed
 };
 
 // Token contract addresses for Ethereum (common tokens)
@@ -39,36 +38,35 @@ const TOKEN_CONTRACTS = {
   '0x514910771AF9Ca656af840dff83E8264EcF986CA': 'LINK',
   '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984': 'UNI',
   '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9': 'AAVE',
-  // Add more token contracts as needed
 };
 
 const COLORS = [
-  '#FF6B6B', // Red - BTC
-  '#4ECDC4', // Teal - ETH  
-  '#45B7D1', // Blue - USDT
-  '#96CEB4', // Green - USDC
-  '#FFEAA7', // Yellow - LINK
-  '#DDA0DD', // Plum - WBTC
-  '#98D8C8', // Mint - UNI
-  '#F7DC6F', // Gold - AAVE
-  '#BB8FCE', // Purple - DAI
-  '#85C1E9', // Light Blue - BUSD
-  '#F8C471', // Orange - MKR
-  '#82E0AA', // Light Green - BAT
-  '#F1948A', // Salmon - ZRX
-  '#85C1E9', // Sky Blue - MANA
-  '#F7DC6F', // Yellow - MATIC
-  '#D7BDE2', // Lavender - SHIB
-  '#A9CCE3', // Light Blue - COMP
-  '#FAD7A0', // Peach - CHAINLINK
-  '#D5A6BD'  // Pink - UNISWAP
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#06b6d4', // Cyan
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#ec4899', // Pink
+  '#84cc16', // Lime
+  '#f97316', // Orange
+  '#3b82f6', // Blue
+  '#14b8a6', // Teal
+  '#a855f7', // Purple
+  '#22c55e', // Green
+  '#eab308', // Yellow
+  '#dc2626', // Red-600
+  '#7c3aed', // Violet-600
+  '#0891b2', // Cyan-600
+  '#059669', // Emerald-600
+  '#d97706'  // Amber-600
 ];
 
 function App() {
   const [portfolio, setPortfolio] = useState([]);
   const [symbol, setSymbol] = useState('');
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState('INR');
+  const [currency, setCurrency] = useState('USD');
   const [error, setError] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [isLoadingWallet, setIsLoadingWallet] = useState(false);
@@ -77,10 +75,8 @@ function App() {
   const [alertSymbol, setAlertSymbol] = useState('');
   const [alertPrice, setAlertPrice] = useState('');
   const [alertType, setAlertType] = useState('above');
-
-  // --- Per-token price alert state ---
-  const [tokenAlerts, setTokenAlerts] = useState({}); // { BTC: { price: 30000, triggered: false } }
-  const [alertInputs, setAlertInputs] = useState({}); // { BTC: '30000' }
+  const [tokenAlerts, setTokenAlerts] = useState({});
+  const [alertInputs, setAlertInputs] = useState({});
 
   // Fetch token prices from CoinGecko
   const fetchTokenPrices = async () => {
@@ -139,15 +135,12 @@ function App() {
 
       const ethBalance = parseInt(ethResponse.data.result, 16) / Math.pow(10, 18);
       
-      // Get token balances (this is a simplified version - you'd need to implement full token detection)
       const tokenBalances = [];
       
-      // Add ETH to portfolio if balance > 0
       if (ethBalance > 0) {
         tokenBalances.push({ symbol: 'ETH', amount: ethBalance });
       }
 
-      // Expanded list of popular ERC-20 tokens
       const commonTokens = [
         { contract: '0xdAC17F958D2ee523a2206206994597C13D831ec7', symbol: 'USDT' },
         { contract: '0xA0b86a33E6441b8C4C8C8C8C8C8C8C8C8C8C8C8', symbol: 'USDC' },
@@ -155,17 +148,6 @@ function App() {
         { contract: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', symbol: 'WBTC' },
         { contract: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', symbol: 'UNI' },
         { contract: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', symbol: 'AAVE' },
-        { contract: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'DAI' },
-        { contract: '0x4Fabb145d64652a948d72533023f6E7A623C7C53', symbol: 'BUSD' },
-        { contract: '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2', symbol: 'MKR' },
-        { contract: '0x0D8775F648430679A709E98d2b0Cb6250d2887EF', symbol: 'BAT' },
-        { contract: '0xE41d2489571d322189246DaFA5ebDe1F4699F498', symbol: 'ZRX' },
-        { contract: '0x0F5D2fB29fb7d3CFeE444a200298f468908cC942', symbol: 'MANA' },
-        { contract: '0x7D1AfA7B718fb893dB30A3aBc0Cfc608aCfeBEBB', symbol: 'MATIC' },
-        { contract: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE', symbol: 'SHIB' },
-        { contract: '0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb', symbol: 'COMP' },
-        { contract: '0x514910771AF9Ca656af840dff83E8264EcF986CA', symbol: 'CHAINLINK' },
-        { contract: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', symbol: 'UNISWAP' }
       ];
 
       for (const token of commonTokens) {
@@ -189,17 +171,15 @@ function App() {
           );
 
           if (tokenResponse.data.result && tokenResponse.data.result !== '0x') {
-            // Different tokens have different decimal places
-            let decimals = 18; // Default for most tokens
-            if (token.symbol === 'USDT' || token.symbol === 'USDC' || token.symbol === 'BUSD') {
-              decimals = 6; // Stablecoins use 6 decimals
+            let decimals = 18;
+            if (token.symbol === 'USDT' || token.symbol === 'USDC') {
+              decimals = 6;
             } else if (token.symbol === 'WBTC') {
-              decimals = 8; // WBTC uses 8 decimals
+              decimals = 8;
             }
             
             const balance = parseInt(tokenResponse.data.result, 16) / Math.pow(10, decimals);
-            if (balance > 0.000001) { // Filter out dust amounts
-              console.log(`Found ${token.symbol}: ${balance}`);
+            if (balance > 0.000001) {
               tokenBalances.push({ symbol: token.symbol, amount: balance });
             }
           }
@@ -231,7 +211,6 @@ function App() {
       setError('Token symbol not supported.');
       return;
     }
-    // Prevent duplicate
     if (portfolio.find((t) => t.symbol === sym)) {
       setError('Token already in portfolio.');
       return;
@@ -241,16 +220,13 @@ function App() {
     setAmount('');
   };
 
-  // Add price alert
-  const handleAddAlert = (e) => {
-    e.preventDefault();
-    if (!alertSymbol || !alertPrice || isNaN(alertPrice)) {
-      setError('Please enter valid symbol and price.');
-      return;
-    }
-    setPriceAlerts([...priceAlerts, { symbol: alertSymbol.toUpperCase(), price: Number(alertPrice), type: alertType }]);
-    setAlertSymbol('');
-    setAlertPrice('');
+  // Remove token from portfolio
+  const handleRemoveToken = (symbolToRemove) => {
+    setPortfolio(portfolio.filter(token => token.symbol !== symbolToRemove));
+    // Also remove any alerts for this token
+    const updatedAlerts = { ...tokenAlerts };
+    delete updatedAlerts[symbolToRemove];
+    setTokenAlerts(updatedAlerts);
   };
 
   // Export to CSV
@@ -298,6 +274,26 @@ function App() {
     };
   }).filter(item => item.value > 0);
 
+  // Alert handlers
+  const handleAlertInput = (symbol, value) => {
+    setAlertInputs({ ...alertInputs, [symbol]: value });
+  };
+
+  const handleSetAlert = (symbol) => {
+    if (!alertInputs[symbol] || isNaN(alertInputs[symbol])) return;
+    setTokenAlerts({
+      ...tokenAlerts,
+      [symbol]: { price: Number(alertInputs[symbol]), triggered: false }
+    });
+    setAlertInputs({ ...alertInputs, [symbol]: '' });
+  };
+
+  const handleClearAlert = (symbol) => {
+    const updated = { ...tokenAlerts };
+    delete updated[symbol];
+    setTokenAlerts(updated);
+  };
+
   // Auto-refresh prices every 30 seconds
   useEffect(() => {
     fetchTokenPrices();
@@ -322,24 +318,6 @@ function App() {
     setTokenAlerts(updated);
   }, [tokenData, portfolio]);
 
-  // --- Table row alert handlers ---
-  const handleAlertInput = (symbol, value) => {
-    setAlertInputs({ ...alertInputs, [symbol]: value });
-  };
-  const handleSetAlert = (symbol) => {
-    if (!alertInputs[symbol] || isNaN(alertInputs[symbol])) return;
-    setTokenAlerts({
-      ...tokenAlerts,
-      [symbol]: { price: Number(alertInputs[symbol]), triggered: false }
-    });
-    setAlertInputs({ ...alertInputs, [symbol]: '' });
-  };
-  const handleClearAlert = (symbol) => {
-    const updated = { ...tokenAlerts };
-    delete updated[symbol];
-    setTokenAlerts(updated);
-  };
-
   // Request notification permission on mount
   useEffect(() => {
     if (window.Notification && Notification.permission !== 'granted') {
@@ -348,288 +326,336 @@ function App() {
   }, []);
 
   return (
-    <div className="App" style={{
-      minHeight: '100vh',
-      background: '#f6f7fb',
-      fontFamily: 'Segoe UI, Roboto, Arial, sans-serif',
-      color: '#222',
-      padding: '32px 0'
-    }}>
-      <div style={{
-        maxWidth: 1100,
-        margin: '0 auto',
-        background: '#fff',
-        borderRadius: 16,
-        boxShadow: '0 4px 32px rgba(0,0,0,0.07)',
-        padding: 40,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 32
-      }}>
-        <header style={{ borderBottom: '1px solid #ececec', paddingBottom: 24, marginBottom: 24 }}>
-          <h1 style={{ fontWeight: 600, fontSize: 32, margin: 0, letterSpacing: 0.5 }}>Crypto Portfolio Tracker</h1>
-          <p style={{ color: '#666', fontSize: 16, margin: '8px 0 0 0' }}>Track your crypto investments in real-time with a clean, professional dashboard.</p>
+    <div className="app">
+      <div className="container">
+        {/* Header */}
+        <header className="header">
+          <div className="header-content">
+            <div className="header-text">
+              <h1 className="title">Crypto Portfolio Tracker</h1>
+              <p className="subtitle">Monitor your cryptocurrency investments with real-time data and professional insights</p>
+            </div>
+            <div className="header-stats">
+              <div className="stat-card">
+                <div className="stat-value">{portfolio.length}</div>
+                <div className="stat-label">Assets</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">{currency} {grandTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                <div className="stat-label">Total Value</div>
+              </div>
+            </div>
+          </div>
         </header>
-        <section style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 320 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 12 }}>Fetch from Wallet Address</h2>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              <input
-                type="text"
-                placeholder="Ethereum wallet address (0x...)"
-                value={walletAddress}
-                onChange={e => setWalletAddress(e.target.value)}
-                style={{ flex: 1, padding: 12, border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 15 }}
-              />
-              <button
-                onClick={fetchWalletHoldings}
-                disabled={isLoadingWallet}
-                style={{ padding: '12px 24px', background: '#222', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
-              >
-                {isLoadingWallet ? 'Loading...' : 'Fetch'}
-              </button>
-            </div>
-            <div style={{ color: '#888', fontSize: 13 }}>Supports ETH and common ERC-20 tokens</div>
-          </div>
-          <div style={{ flex: 1, minWidth: 320 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 12 }}>Add Token Manually</h2>
-            <form onSubmit={handleAddToken} style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                placeholder="Token Symbol (e.g. BTC)"
-                value={symbol}
-                onChange={e => setSymbol(e.target.value)}
-                style={{ flex: 1, padding: 12, border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 15 }}
-              />
-              <input
-                type="number"
-                placeholder="Amount Held"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                style={{ flex: 1, padding: 12, border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 15 }}
-              />
-              <button type="submit" style={{ padding: '12px 24px', background: '#222', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 500, fontSize: 15, cursor: 'pointer' }}>Add</button>
-            </form>
-          </div>
-        </section>
-        <section style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <span style={{ fontWeight: 500 }}>Currency:</span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input type="radio" checked={currency === 'INR'} onChange={() => setCurrency('INR')} /> INR
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input type="radio" checked={currency === 'USD'} onChange={() => setCurrency('USD')} /> USD
-            </label>
-          </div>
-          {portfolio.length > 0 && (
-            <button
-              onClick={exportToCSV}
-              style={{ padding: '10px 24px', background: '#fff', color: '#222', border: '1px solid #e0e0e0', borderRadius: 8, fontWeight: 500, fontSize: 15, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}
-            >
-              Export to CSV
-            </button>
-          )}
-        </section>
+
+        {/* Error Message */}
         {error && (
-          <div style={{ color: '#b00020', background: '#fff3f3', border: '1px solid #ffd6d6', borderRadius: 8, padding: 12, marginBottom: 16 }}>{error}</div>
-        )}
-        <section
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 32,
-            alignItems: 'stretch',
-            marginBottom: 24,
-          }}
-        >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 12,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              padding: 32,
-              minWidth: 320,
-              minHeight: 400,
-              marginBottom: 0
-              // No borderLeft here!
-            }}
-          >
-            <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16, letterSpacing: 0.2 }}>Portfolio Overview</h2>
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'none', borderRadius: 8, overflow: 'hidden' }}>
-              <thead>
-                <tr style={{ background: '#f6f7fb', borderBottom: '2px solid #ececec' }}>
-                  <th style={{ padding: 14, textAlign: 'left', fontWeight: 600 }}>Token</th>
-                  <th style={{ padding: 14, textAlign: 'left', fontWeight: 600 }}>Name</th>
-                  <th style={{ padding: 14, textAlign: 'right', fontWeight: 600 }}>Price ({currency})</th>
-                  <th style={{ padding: 14, textAlign: 'right', fontWeight: 600 }}>24h Change (%)</th>
-                  <th style={{ padding: 14, textAlign: 'right', fontWeight: 600 }}>Amount</th>
-                  <th style={{ padding: 14, textAlign: 'right', fontWeight: 600 }}>Value ({currency})</th>
-                  <th style={{ padding: 14, textAlign: 'center', fontWeight: 600 }}>Alert</th>
-                </tr>
-              </thead>
-              <tbody>
-                {portfolio.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: '#aaa' }}>
-                      No tokens added yet. Add tokens manually or fetch from wallet address.
-                    </td>
-                  </tr>
-                ) : (
-                  portfolio.map((t) => {
-                    const alert = tokenAlerts[t.symbol];
-                    const price = tokenData[t.symbol]?.price;
-                    const change = tokenData[t.symbol]?.change;
-                    const alertTriggered = alert && alert.triggered && price !== undefined && price >= alert.price;
-                    return (
-                      <tr key={t.symbol} style={{
-                        borderBottom: '1px solid #f1f3f4',
-                        transition: 'background 0.2s',
-                        background: alertTriggered ? '#e8f5e9' : undefined
-                      }}>
-                        <td style={{ padding: 14, fontWeight: 500 }}>{t.symbol}</td>
-                        <td style={{ padding: 14 }}>{SYMBOL_TO_ID[t.symbol] ? SYMBOL_TO_ID[t.symbol].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : ''}</td>
-                        <td style={{ padding: 14, textAlign: 'right' }}>{price?.toFixed(4) ?? '-'}</td>
-                        <td style={{ padding: 14, textAlign: 'right', color: change > 0 ? '#388e3c' : change < 0 ? '#b00020' : '#222' }}>{change ? change.toFixed(2) : '-'}</td>
-                        <td style={{ padding: 14, textAlign: 'right' }}>{t.amount}</td>
-                        <td style={{ padding: 14, textAlign: 'right', fontWeight: 500 }}>{price ? (price * t.amount).toFixed(4) : '-'}</td>
-                        {/* Alert cell */}
-                        <td style={{ padding: 14, minWidth: 180 }}>
-                          {alert ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontWeight: 500 }}>
-                                  Alert: {alert.price} {currency}
-                                </span>
-                                <button onClick={() => handleClearAlert(t.symbol)} style={{ marginLeft: 4, background: '#fff', border: '1px solid #ececec', borderRadius: 6, color: '#b00020', fontWeight: 600, cursor: 'pointer', padding: '2px 8px' }}>Clear</button>
-                              </div>
-                              {alertTriggered ? (
-                                <span style={{ color: '#388e3c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  &#x2705; <span role="img" aria-label="bell">🔔</span> Alert! {t.symbol} {alert.type} {alert.price} {currency}
-                                </span>
-                              ) : (
-                                <span style={{ color: '#888', fontWeight: 400 }}>
-                                  Waiting for alert: {t.symbol} {alert.type} {alert.price} {currency}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', gap: 8 }}>
-                              <input
-                                type="number"
-                                placeholder={`Alert price (${currency})`}
-                                value={alertInputs[t.symbol] || ''}
-                                onChange={e => handleAlertInput(t.symbol, e.target.value)}
-                                style={{ width: 90, padding: 4, border: '1px solid #ececec', borderRadius: 6, fontSize: 14 }}
-                              />
-                              <button
-                                onClick={() => handleSetAlert(t.symbol)}
-                                style={{ background: '#222', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 500, cursor: 'pointer', padding: '4px 12px', fontSize: 14 }}
-                              >
-                                Set Alert ({currency})
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-              <tfoot>
-                <tr style={{ background: '#f6f7fb', fontWeight: 600 }}>
-                  <td colSpan={5} style={{ textAlign: 'right', padding: 14 }}>Grand Total:</td>
-                  <td style={{ padding: 14, textAlign: 'right', fontWeight: 700 }}>{grandTotal ? `${currency} ${grandTotal.toFixed(4)}` : '-'}</td>
-                </tr>
-              </tfoot>
-            </table>
+          <div className="error-message">
+            <svg className="error-icon" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            {error}
           </div>
-          {pieChartData.length > 0 && (
-            <div
-              style={{
-                background: '#fafbfc',
-                borderRadius: 12,
-                boxShadow: '0 2px 16px 0 rgba(76, 175, 255, 0.10)',
-                padding: 32,
-                minWidth: 320,
-                minHeight: 400,
-                marginTop: 0,
-                borderLeft: '6px solid #667eea',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: '#222' }}>Portfolio Distribution</h2>
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={pieChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${currency} ${Number(value).toLocaleString()}`} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+        )}
+
+        {/* Input Section */}
+        <div className="input-section">
+          <div className="input-grid">
+            {/* Wallet Import */}
+            <div className="input-card">
+              <h3 className="input-title">Import from Wallet</h3>
+              <p className="input-description">Connect your Ethereum wallet to automatically import your holdings</p>
+              <div className="wallet-input-group">
+                <input
+                  type="text"
+                  placeholder="Enter Ethereum wallet address (0x...)"
+                  value={walletAddress}
+                  onChange={e => setWalletAddress(e.target.value)}
+                  className="wallet-input"
+                />
+                <button
+                  onClick={fetchWalletHoldings}
+                  disabled={isLoadingWallet}
+                  className="wallet-button"
+                >
+                  {isLoadingWallet ? (
+                    <div className="loading-spinner"></div>
+                  ) : (
+                    <>
+                      <svg className="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Import
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          )}
-        </section>
-        <section style={{ marginTop: 24 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 12 }}>Price Alerts</h2>
-          <form onSubmit={handleAddAlert} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <input
-              type="text"
-              placeholder="Token Symbol"
-              value={alertSymbol}
-              onChange={e => setAlertSymbol(e.target.value)}
-              style={{ flex: 1, padding: 12, border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 15 }}
-            />
-            <select
-              value={alertType}
-              onChange={e => setAlertType(e.target.value)}
-              style={{ padding: 12, border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 15 }}
-            >
-              <option value="above">Above</option>
-              <option value="below">Below</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Price Target"
-              value={alertPrice}
-              onChange={e => setAlertPrice(e.target.value)}
-              style={{ flex: 1, padding: 12, border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 15 }}
-            />
-            <button type="submit" style={{ padding: '12px 24px', background: '#222', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 500, fontSize: 15, cursor: 'pointer' }}>Add Alert</button>
-          </form>
-          {priceAlerts.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {priceAlerts.map((alert, index) => (
-                <div key={index} style={{ background: '#f6f7fb', border: '1px solid #ececec', borderRadius: 16, padding: '8px 16px', fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>{alert.symbol} {alert.type} {alert.price} {currency}</span>
-                  <button
-                    onClick={() => setPriceAlerts(priceAlerts.filter((_, i) => i !== index))}
-                    style={{ background: '#b00020', border: 'none', borderRadius: '50%', width: 20, height: 20, color: '#fff', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    ×
+
+            {/* Manual Add */}
+            <div className="input-card">
+              <h3 className="input-title">Add Manually</h3>
+              <p className="input-description">Manually add cryptocurrencies to track in your portfolio</p>
+              <form onSubmit={handleAddToken} className="manual-form">
+                <div className="form-row">
+                  <input
+                    type="text"
+                    placeholder="Symbol (e.g., BTC)"
+                    value={symbol}
+                    onChange={e => setSymbol(e.target.value)}
+                    className="form-input"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    className="form-input"
+                    step="any"
+                  />
+                  <button type="submit" className="add-button">
+                    <svg className="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add
                   </button>
                 </div>
-              ))}
+              </form>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="controls">
+            <div className="currency-selector">
+              <span className="control-label">Currency:</span>
+              <div className="radio-group">
+                <label className="radio-label">
+                  <input 
+                    type="radio" 
+                    checked={currency === 'USD'} 
+                    onChange={() => setCurrency('USD')}
+                    className="radio-input"
+                  />
+                  <span className="radio-custom"></span>
+                  USD
+                </label>
+                <label className="radio-label">
+                  <input 
+                    type="radio" 
+                    checked={currency === 'INR'} 
+                    onChange={() => setCurrency('INR')}
+                    className="radio-input"
+                  />
+                  <span className="radio-custom"></span>
+                  INR
+                </label>
+              </div>
+            </div>
+            {portfolio.length > 0 && (
+              <button onClick={exportToCSV} className="export-button">
+                <svg className="button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export CSV
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="main-content">
+          {/* Portfolio Table */}
+          <div className="portfolio-section">
+            <div className="section-header">
+              <h2 className="section-title">Portfolio Overview</h2>
+              <div className="section-subtitle">Track your cryptocurrency holdings and performance</div>
+            </div>
+            
+            {portfolio.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="empty-title">No assets in portfolio</h3>
+                <p className="empty-description">Add cryptocurrencies manually or import from your wallet to get started</p>
+              </div>
+            ) : (
+              <div className="table-container">
+                <table className="portfolio-table">
+                  <thead>
+                    <tr>
+                      <th>Asset</th>
+                      <th>Price</th>
+                      <th>24h Change</th>
+                      <th>Holdings</th>
+                      <th>Value</th>
+                      <th>Alert</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {portfolio.map((token, index) => {
+                      const alert = tokenAlerts[token.symbol];
+                      const price = tokenData[token.symbol]?.price;
+                      const change = tokenData[token.symbol]?.change;
+                      const value = price ? price * token.amount : 0;
+                      const alertTriggered = alert && alert.triggered && price !== undefined && price >= alert.price;
+                      
+                      return (
+                        <tr key={token.symbol} className={alertTriggered ? 'alert-triggered' : ''}>
+                          <td>
+                            <div className="asset-cell">
+                              <div 
+                                className="asset-icon"
+                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                              >
+                                {token.symbol.charAt(0)}
+                              </div>
+                              <div className="asset-info">
+                                <div className="asset-symbol">{token.symbol}</div>
+                                <div className="asset-name">
+                                  {SYMBOL_TO_ID[token.symbol] ? 
+                                    SYMBOL_TO_ID[token.symbol].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
+                                    token.symbol
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="price-cell">
+                              {price ? `${currency} ${price.toLocaleString(undefined, { maximumFractionDigits: 4 })}` : '-'}
+                            </div>
+                          </td>
+                          <td>
+                            <div className={`change-cell ${change > 0 ? 'positive' : change < 0 ? 'negative' : ''}`}>
+                              {change ? (
+                                <>
+                                  {change > 0 ? '↗' : change < 0 ? '↘' : '→'} {Math.abs(change).toFixed(2)}%
+                                </>
+                              ) : '-'}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="holdings-cell">
+                              {token.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="value-cell">
+                              {value > 0 ? `${currency} ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="alert-cell">
+                              {alert ? (
+                                <div className="alert-active">
+                                  <div className="alert-info">
+                                    <span className="alert-price">{alert.price} {currency}</span>
+                                    {alertTriggered && <span className="alert-badge">🔔 Triggered</span>}
+                                  </div>
+                                  <button 
+                                    onClick={() => handleClearAlert(token.symbol)}
+                                    className="alert-clear"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="alert-setup">
+                                  <input
+                                    type="number"
+                                    placeholder="Price"
+                                    value={alertInputs[token.symbol] || ''}
+                                    onChange={e => handleAlertInput(token.symbol, e.target.value)}
+                                    className="alert-input"
+                                  />
+                                  <button
+                                    onClick={() => handleSetAlert(token.symbol)}
+                                    className="alert-set"
+                                  >
+                                    Set
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <button
+                              onClick={() => handleRemoveToken(token.symbol)}
+                              className="remove-button"
+                              title="Remove from portfolio"
+                            >
+                              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Chart Section */}
+          {pieChartData.length > 0 && (
+            <div className="chart-section">
+              <div className="section-header">
+                <h2 className="section-title">Portfolio Distribution</h2>
+                <div className="section-subtitle">Visual breakdown of your asset allocation</div>
+              </div>
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value) => [`${currency} ${Number(value).toLocaleString()}`, 'Value']}
+                      labelStyle={{ color: '#374151' }}
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
-        </section>
-        <footer style={{ textAlign: 'center', color: '#888', fontSize: 14, marginTop: 32 }}>
-          Powered by CoinGecko API & Alchemy
+        </div>
+
+        {/* Footer */}
+        <footer className="footer">
+          <div className="footer-content">
+            <p>Powered by CoinGecko API & Alchemy</p>
+            <div className="footer-links">
+              <span>Real-time data</span>
+              <span>•</span>
+              <span>Secure tracking</span>
+              <span>•</span>
+              <span>Professional insights</span>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
